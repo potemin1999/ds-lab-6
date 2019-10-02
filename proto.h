@@ -25,6 +25,18 @@
 // 4 bytes for uint code, zero after
 #define RESPONSE_SEND_CHUNK_OK 0
 
+// 4 bytes of uint code
+#define COMMAND_SEND_COMMIT 3
+
+// 4 bytes of uint code
+#define RESPONSE_SEND_COMMIT_OK 0
+
+// 4 bytes for uint code
+#define COMMAND_SEND_RESET 4
+
+// 4 bytes for uint code
+#define RESPONSE_SEND_RESET_OK 0
+
 // 4 bytes for uint code,
 // 4 bytes for uint message size
 // n bytes without \0 for error message
