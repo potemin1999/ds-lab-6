@@ -36,7 +36,7 @@ char *make_next_file_name(const char *orig_file_name) {
             fclose(check_file);
         }
         sprintf(buffer, "%s.%d", orig_file_name, ++index);
-        check_file = fopen(buffer,"r");
+        check_file = fopen(buffer, "r");
     } while (check_file != nullptr);
     return buffer;
 }
@@ -115,7 +115,7 @@ int serve_send_file(worker_info_t *info) {
 }
 
 int serve_send_chunk(worker_info_t *info) {
-    printf("Received send file command on socket %d\n",info->client_socket);
+    printf("Received send file command on socket %d\n", info->client_socket);
     if (info->incoming_file == nullptr || info->incoming_file->local_file == nullptr) {
         printf("unexpected SEND CHUNK, use SEND first");
         send_error(info->client_socket, RESPONSE_FAIL, "unexpected SEND CHUNK, use SEND first");
@@ -146,12 +146,12 @@ int serve_send_chunk(worker_info_t *info) {
     return 0;
 }
 
-int serve_send_commit(worker_info_t *info ){
+int serve_send_commit(worker_info_t *info) {
     uint32_t response = htonl(RESPONSE_SEND_COMMIT_OK);
     send(info->client_socket, &response, 4, 0);
-    printf("Transaction on socket %d have been committed\n",info->client_socket);
-    if (info->incoming_file != nullptr ){
-        delete [] info->incoming_file->file_name;
+    printf("Transaction on socket %d have been committed\n", info->client_socket);
+    if (info->incoming_file != nullptr) {
+        delete[] info->incoming_file->file_name;
         fclose(info->incoming_file->local_file);
         delete info->incoming_file;
         info->incoming_file = nullptr;
@@ -167,13 +167,13 @@ int serve_send_reset(worker_info_t *info) {
     } else {
         printf("Transaction from socket %d was aborted\n", info->client_socket);
     }
-    if (info->incoming_file != nullptr && info->incoming_file->file_name != nullptr){
-        FILE *file_check = fopen(info->incoming_file->file_name,"r");
+    if (info->incoming_file != nullptr && info->incoming_file->file_name != nullptr) {
+        FILE *file_check = fopen(info->incoming_file->file_name, "r");
         if (file_check != nullptr) {
             fclose(file_check);
             remove(info->incoming_file->file_name);
         }
-        delete [] info->incoming_file->file_name;
+        delete[] info->incoming_file->file_name;
         delete info->incoming_file;
     }
     return 0;
@@ -215,7 +215,12 @@ void *serve(void *data) {
 }
 
 int main(int argc, const char **argv) {
+    if (argc < 2) {
+        printf("argument <port> is required\n");
+        exit(10);
+    }
     uint16_t port = 9911;
+    sscanf(argv[1],"%hd",&port);
     printf("Starting new file server on port %d\n", port);
     int server_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (server_socket == -1) {

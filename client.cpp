@@ -22,7 +22,7 @@ int connect_to(const char *ip, uint16_t port) {
     dest.sin_port = htons(port);
     dest.sin_addr.s_addr = *((in_addr_t *) host->h_addr);
     int socket_fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    connect(socket_fd, (sockaddr * ) & dest, sizeof(sockaddr));
+    connect(socket_fd, (sockaddr *) &dest, sizeof(sockaddr));
     return socket_fd;
 }
 
@@ -94,17 +94,17 @@ int main(int argc, const char **argv) {
         printf("File with name %s already exists, server offers name %s\n", file_name, save_file_name_offer);
         printf("Accept? (y/n) : ");
         char answer = 0;
-        while (scanf("%c",&answer)==0) {
+        while (scanf("%c", &answer) == 0) {
             printf("Input \'y\' or \'n\'\n");
         }
         if (answer == 'y') {
             printf("Continue file transaction\n");
-        }else {
+        } else {
             printf("Aborting file transaction...\n");
             uint32_t code = htonl(COMMAND_SEND_RESET);
-            send(socket,&code,4,0);
+            send(socket, &code, 4, 0);
             // send reset code and receive ok response
-            recv(socket,&code,4,0);
+            recv(socket, &code, 4, 0);
             printf("Transaction aborted\n");
             exit(5);
         }
@@ -112,26 +112,35 @@ int main(int argc, const char **argv) {
 
 
     // send file chunks
+    int32_t chunk_counter = 1;
     int32_t bytes_left = ntohl(file_size);
-    uint32_t chunk_max_length = chunk_size;
+    uint32_t chunk_max_length = ntohl(chunk_size);
     char buffer[chunk_max_length];
+    printf("Expected to send %d chunks\n", (int)(double(bytes_left) / chunk_max_length) + (bytes_left % chunk_max_length ? 1 : 0));
     while (bytes_left > 0) {
-        uint32_t curr_chunk_size = fread(buffer,1,chunk_max_length,file);
+        uint32_t curr_chunk_size = fread(buffer, 1, chunk_max_length, file);
         command = htonl(COMMAND_SEND_CHUNK);
         bytes_left -= curr_chunk_size;
         auto curr_chunk_size_n = htonl(curr_chunk_size);
-        send(socket,&command,4,0);
-        send(socket,&curr_chunk_size_n,4,0);
-        send(socket,buffer,curr_chunk_size,0);
+        send(socket, &command, 4, 0);
+        send(socket, &curr_chunk_size_n, 4, 0);
+        send(socket, buffer, curr_chunk_size, 0);
+        recv(socket, &command, 4, 0);
+        if (command != 0) {
+            printf("Error while sending chunk %d", chunk_counter);
+        } else {
+            printf("Sent chunk %d, size %d\n", chunk_counter, curr_chunk_size);
+        }
+        chunk_counter++;
     }
 
     //send commit
     uint32_t data = htonl(COMMAND_SEND_COMMIT);
-    send(socket,&data,4,0);
-    recv(socket,&data,4,0);
-    if (ntohl(data) != 0 ){
-        printf("Commit was failed : %d\n",ntohl(data));
-    }else {
+    send(socket, &data, 4, 0);
+    recv(socket, &data, 4, 0);
+    if (ntohl(data) != 0) {
+        printf("Commit was failed : %d\n", ntohl(data));
+    } else {
         printf("Commited \n");
     }
     return 0;
